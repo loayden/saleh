@@ -7,6 +7,13 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
   if (!user && pathname === "/api/orders") return NextResponse.json({ error: "تسجيل الدخول مطلوب" }, { status: 401 });
+  const configuredAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const isConfiguredAdmin = Boolean(user?.email && configuredAdminEmail && user.email.toLowerCase() === configuredAdminEmail);
+  if (isConfiguredAdmin && pathname === "/account" && request.nextUrl.searchParams.get("welcome") === "1") {
+    const adminUrl = request.nextUrl.clone();
+    adminUrl.pathname = "/admin";
+    return NextResponse.redirect(adminUrl);
+  }
   const protectedPages = ["/account", "/orders", "/addresses", "/merchant", "/admin"];
   const isProtectedPage = protectedPages.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   if (!user && isProtectedPage) {
