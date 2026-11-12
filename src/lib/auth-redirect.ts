@@ -10,3 +10,10 @@ export function authCallbackUrl(next: string) {
   callback.searchParams.set("next", safeAuthNext(next));
   return callback.toString();
 }
+
+export function withWelcome(next: string) {
+  const safeNext = safeAuthNext(next);
+  const url = new URL(safeNext, "https://saleh.local");
+  url.searchParams.set("welcome", "1");
+  return `${url.pathname}${url.search}${url.hash}`;
+}

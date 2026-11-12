@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { CART_STORAGE_KEY, type CartItem } from "@/lib/cart";
+import AuthAccountLink from "@/components/auth-account-link";
 import { Compass, Heart, Home as HomeIcon, Menu, ShoppingBag, UserRound, X } from "lucide-react";
 
 type LiveFabric = {
@@ -127,7 +128,7 @@ export default function Home() {
 
     <footer className="home-v2-footer"><div><div className="home-v2-brand">صَالِح<small>FABRIC / DESIGN / YOU</small></div><p>اكتشاف القماش، وبداية قطعة تشبهك.</p></div><div><h3>اكتشفي</h3><Link href="/shop">كل الأقمشة</Link><Link href="/categories">الأقسام</Link><Link href="/guide">دليل الأقمشة</Link></div><div><h3>ابدئي</h3><Link href="/tailors">تصميم قطعتك</Link><Link href="/visualizer">استوديو التصور</Link><Link href="/account">حسابك</Link></div></footer>
 
-    <nav className="mobile-bottom-nav" aria-label="تنقل سريع"><Link href="/" className="active"><HomeIcon aria-hidden="true" /><small>الرئيسية</small></Link><Link href="/categories"><Compass aria-hidden="true" /><small>اكتشفي</small></Link><Link href="/cart"><ShoppingBag aria-hidden="true" /><small>السلة {cart.length ? `(${cart.length})` : ""}</small></Link><Link href="/favorites"><Heart aria-hidden="true" /><small>المفضلة</small></Link><Link href="/account"><UserRound aria-hidden="true" /><small>حسابي</small></Link></nav>
+    <nav className="mobile-bottom-nav" aria-label="تنقل سريع"><Link href="/" className="active"><HomeIcon aria-hidden="true" /><small>الرئيسية</small></Link><Link href="/categories"><Compass aria-hidden="true" /><small>اكتشفي</small></Link><Link href="/cart"><ShoppingBag aria-hidden="true" /><small>السلة {cart.length ? `(${cart.length})` : ""}</small></Link><Link href="/favorites"><Heart aria-hidden="true" /><small>المفضلة</small></Link><AuthAccountLink /></nav>
     {cartOpen && <div className="overlay" onClick={() => setCartOpen(false)}><aside className="home-v2-cart" onClick={(event) => event.stopPropagation()}><button className="close" onClick={() => setCartOpen(false)} aria-label="إغلاق السلة"><X aria-hidden="true" /></button><p className="home-v2-kicker">سلتك</p><h2>اختياراتك</h2>{cart.length === 0 ? <div className="home-v2-cart-empty">لم تضيفي أي قماش بعد.<br /><Link href="/shop" onClick={() => setCartOpen(false)}>ابدئي من المتجر ←</Link></div> : <><div>{cart.map((fabric, index) => <div className="home-v2-cart-item" key={`${fabric.id}-${fabric.color}-${index}`}><div><strong>{fabric.name}</strong><small>{fabric.meters} متر · {fabric.price.toLocaleString("ar-EG")} ج.م / متر</small></div><button onClick={() => setCart((items) => items.filter((_, itemIndex) => itemIndex !== index))} aria-label={`إزالة ${fabric.name}`}><X aria-hidden="true" /></button></div>)}</div><Link className="home-v2-primary home-v2-cart-checkout" href="/cart" onClick={() => setCartOpen(false)}>مراجعة السلة ←</Link></>}</aside></div>}
     {toast && <div className="toast">{toast}</div>}
   </main>;

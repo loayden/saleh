@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, LoaderCircle, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
-import { authCallbackUrl, safeAuthNext } from "@/lib/auth-redirect";
+import { authCallbackUrl, safeAuthNext, withWelcome } from "@/lib/auth-redirect";
 
 export default function AuthPage() {
   const router = useRouter(), searchParams = useSearchParams();
@@ -24,11 +24,28 @@ export default function AuthPage() {
   const [busy, setBusy] = useState<"password" | "google" | "magic" | "resend" | null>(null);
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [magicSent, setMagicSent] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(Boolean(supabase));
 
   const callbackMessage = searchParams.get("error") === "confirmation_failed"
     ? "الرابط انتهت صلاحيته أو تم استخدامه من قبل. اطلبي رابط تأكيد جديدًا."
     : "";
   const visibleMessage = message || callbackMessage;
+
+  useEffect(() => {
+    let active = true;
+    if (!supabase) {
+      return () => { active = false; };
+    }
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      if (data.session) {
+        router.replace(withWelcome(next));
+        return;
+      }
+      setCheckingSession(false);
+    });
+    return () => { active = false; };
+  }, [next, router]);
 
   const rememberEmail = (value: string) => {
     const normalized = value.trim().toLowerCase();
@@ -51,7 +68,7 @@ export default function AuthPage() {
       setMessage(isUnconfirmed ? "لسه محتاجين تأكيد بريدك الإلكتروني قبل الدخول." : "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
       return;
     }
-    router.push(next);
+    router.push(withWelcome(next));
     router.refresh();
   };
 
@@ -70,7 +87,7 @@ export default function AuthPage() {
       setMessage("تسجيل Google سيعمل فور تفعيل Google OAuth في Supabase. يمكنكِ استخدام البريد أو رابط الدخول الآمن الآن.");
       return;
     }
-    const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: authCallbackUrl(next) } });
+    const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: authCallbackUrl(withWelcome(next)) } });
     if (error || !data.url) {
       setBusy(null);
       setMessage("تسجيل Google غير مفعّل في إعدادات المنصة حاليًا. جرّبي البريد أو أكملي إعداد Google في Supabase.");
@@ -85,7 +102,7 @@ export default function AuthPage() {
     const normalizedEmail = rememberEmail(email || rememberedEmail);
     if (!normalizedEmail) return setMessage("اكتبي بريدك الإلكتروني أولًا");
     setBusy("magic");
-    const { error } = await supabase.auth.signInWithOtp({ email: normalizedEmail, options: { emailRedirectTo: authCallbackUrl(next) } });
+    const { error } = await supabase.auth.signInWithOtp({ email: normalizedEmail, options: { emailRedirectTo: authCallbackUrl(withWelcome(next)) } });
     setBusy(null);
     if (error) return setMessage("تعذر إرسال رابط الدخول. تأكدي من إعدادات البريد وحاولي مرة أخرى.");
     setMagicSent(true);
@@ -95,10 +112,12 @@ export default function AuthPage() {
   const resendConfirmation = async () => {
     if (!supabase || !confirmationEmail) return;
     setBusy("resend");
-    const { error } = await supabase.auth.resend({ type: "signup", email: confirmationEmail, options: { emailRedirectTo: authCallbackUrl(next) } });
+    const { error } = await supabase.auth.resend({ type: "signup", email: confirmationEmail, options: { emailRedirectTo: authCallbackUrl(withWelcome(next)) } });
     setBusy(null);
     setMessage(error ? "تعذر إعادة إرسال رسالة التأكيد الآن." : "تم إرسال رسالة تأكيد جديدة. راجعي الوارد والرسائل غير المرغوب فيها.");
   };
+
+  if (checkingSession) return <main dir="rtl" className="auth-page"><div className="auth-card auth-card-premium auth-session-loading"><div className="auth-brand-mark"><ShieldCheck aria-hidden="true" /></div><p className="eyebrow">مساحة صَالِح</p><h1>بنفتح حسابك</h1><p>بنراجع تسجيل الدخول المحفوظ على الجهاز...</p><LoaderCircle className="auth-loading-icon spin" aria-label="جاري التحقق" /></div></main>;
 
   return <main dir="rtl" className="auth-page"><div className="auth-card auth-card-premium"><div className="auth-brand-mark"><ShieldCheck aria-hidden="true" /></div><p className="eyebrow">مساحة صَالِح</p><h1>أهلاً بيكي</h1><p>دخّلي حسابك عشان تحفظي اختياراتك وتتابعي طلباتك وتكمّلي رحلتك من آخر خطوة.</p><button className="oauth-button" disabled={busy !== null} type="button" onClick={() => void signInWithGoogle()}><span className="google-mark">G</span>{busy === "google" ? <><LoaderCircle className="spin" aria-hidden="true" /> جاري فتح Google...</> : "المتابعة باستخدام Google"}</button><div className="auth-divider"><span>أو بالبريد الإلكتروني</span></div><form onSubmit={submit}><label><span className="field-label"><Mail aria-hidden="true" /> البريد الإلكتروني</span><input type="email" autoComplete="email" inputMode="email" value={email || rememberedEmail} onChange={(e) => setEmail(e.target.value)} required /></label><label><span className="field-label"><LockKeyhole aria-hidden="true" /> كلمة المرور</span><input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} required /></label><button className="primary auth-submit" disabled={busy !== null} type="submit">{busy === "password" ? <><LoaderCircle className="spin" aria-hidden="true" /> جاري التحقق...</> : <>تسجيل الدخول <ArrowLeft aria-hidden="true" /></>}</button></form><button className="magic-link-button" disabled={busy !== null} type="button" onClick={() => void sendMagicLink()}><Mail aria-hidden="true" />{busy === "magic" ? "جاري إرسال الرابط..." : "دخول سريع برابط آمن بدون كلمة مرور"}</button>{magicSent && <p className="auth-inline-success"><CheckCircle2 aria-hidden="true" /> {message}</p>}{visibleMessage && !magicSent && <small className="auth-message">{visibleMessage}</small>}{confirmationEmail && <div className="confirmation-help"><p>مش لاقية رسالة التأكيد؟</p><button type="button" disabled={busy !== null} onClick={() => void resendConfirmation()}>{busy === "resend" ? "جاري الإرسال..." : "إعادة إرسال رسالة التأكيد"}</button></div>}<div className="auth-links"><Link className="auth-secondary" href={`/auth/signup?next=${encodeURIComponent(next)}`}>إنشاء حساب جديد</Link><Link className="auth-secondary" href="/auth/forgot-password">نسيت كلمة المرور؟</Link></div><p className="auth-trust"><ShieldCheck aria-hidden="true" /> تسجيل آمن وبياناتك تفضل ملكك</p></div></main>;
 }

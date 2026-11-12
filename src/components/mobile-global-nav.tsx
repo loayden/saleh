@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Heart, Home, ShoppingBag, UserRound } from "lucide-react";
+import { Compass, Heart, Home, ShoppingBag } from "lucide-react";
+import AuthAccountLink from "@/components/auth-account-link";
 
 export default function MobileGlobalNav() {
   const pathname = usePathname();
@@ -14,6 +15,6 @@ export default function MobileGlobalNav() {
     <Link className={isActive(["/categories", "/fabrics"]) ? "active" : ""} href="/categories"><Compass aria-hidden="true" /><small>اكتشفي</small></Link>
     <Link className={isActive(["/cart"]) ? "active" : ""} href="/cart"><ShoppingBag aria-hidden="true" /><small>السلة</small></Link>
     <Link className={isActive(["/favorites"]) ? "active" : ""} href="/favorites"><Heart aria-hidden="true" /><small>المفضلة</small></Link>
-    <Link className={isActive(["/account", "/auth", "/orders", "/addresses"]) ? "active" : ""} href="/account"><UserRound aria-hidden="true" /><small>حسابي</small></Link>
+    <AuthAccountLink className={isActive(["/account", "/auth", "/orders", "/addresses"]) ? "active" : ""} />
   </nav>;
 }

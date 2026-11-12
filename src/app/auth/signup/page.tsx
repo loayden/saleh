@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 import { ArrowLeft, CheckCircle2, LockKeyhole, Mail, UserPlus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { authCallbackUrl, safeAuthNext } from "@/lib/auth-redirect";
+import { authCallbackUrl, safeAuthNext, withWelcome } from "@/lib/auth-redirect";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -28,11 +28,11 @@ export default function SignupPage() {
     if (password !== confirmation) { setMessage("تأكيد كلمة المرور غير مطابق"); return; }
     setBusy(true);
     const normalizedEmail = email.trim().toLowerCase();
-    const result = await supabase.auth.signUp({ email: normalizedEmail, password, options: { data: { full_name: fullName.trim() }, emailRedirectTo: authCallbackUrl(next) } });
+    const result = await supabase.auth.signUp({ email: normalizedEmail, password, options: { data: { full_name: fullName.trim() }, emailRedirectTo: authCallbackUrl(withWelcome(next)) } });
     setBusy(false);
     if (result.error) { setMessage(result.error.message); return; }
     window.localStorage.setItem("saleh_auth_email", normalizedEmail);
-    if (result.data.session) { router.push(next); router.refresh(); return; }
+    if (result.data.session) { router.push(withWelcome(next)); router.refresh(); return; }
     setCreated(true);
     setMessage("تم إنشاء الحساب. افتحي رسالة التأكيد من صَالِح لإكمال التسجيل، ثم ارجعي لتسجيل الدخول.");
   };
@@ -40,7 +40,7 @@ export default function SignupPage() {
   const resendConfirmation = async () => {
     if (!supabase || !email.trim()) return;
     setResendBusy(true);
-    const { error } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase(), options: { emailRedirectTo: authCallbackUrl(next) } });
+    const { error } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase(), options: { emailRedirectTo: authCallbackUrl(withWelcome(next)) } });
     setResendBusy(false);
     setMessage(error ? "تعذر إعادة الإرسال الآن. حاولي بعد قليل." : "تم إرسال رسالة جديدة. راجعي الوارد والرسائل غير المرغوب فيها.");
   };
