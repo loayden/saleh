@@ -59,6 +59,17 @@ export default function AuthPage() {
     setMessage("");
     if (!supabase) return setMessage("إعداد Supabase غير مكتمل");
     setBusy("google");
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    const settingsResponse = supabaseUrl && publishableKey
+      ? await fetch(`${supabaseUrl}/auth/v1/settings`, { headers: { apikey: publishableKey } }).catch(() => null)
+      : null;
+    const settings = settingsResponse?.ok ? await settingsResponse.json().catch(() => null) : null;
+    if (!settings?.external?.google) {
+      setBusy(null);
+      setMessage("تسجيل Google سيعمل فور تفعيل Google OAuth في Supabase. يمكنكِ استخدام البريد أو رابط الدخول الآمن الآن.");
+      return;
+    }
     const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: authCallbackUrl(next) } });
     if (error || !data.url) {
       setBusy(null);
