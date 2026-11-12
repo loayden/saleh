@@ -1,0 +1,9 @@
+.admin-product-edit{background:#f7f1eb;padding:20px;margin:15px 0;border:1px solid var(--line)}
+.admin-product-edit h3{margin:0;font-size:17px}
+.admin-edit-close{display:grid;place-items:center;color:var(--rose);background:transparent}
+.admin-edit-close svg{width:18px;height:18px}
+.admin-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.admin-product-edit label{display:block;font-size:10px;margin-top:14px}
+.admin-product-edit input{display:block;width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:10px 0;font:10px Alexandria;outline:0}
+.admin-product-edit .primary{margin-top:18px}
+@media(max-width:700px){.admin-edit-grid{grid-template-columns:1fr}}

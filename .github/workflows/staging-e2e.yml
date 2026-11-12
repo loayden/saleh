@@ -1,0 +1,40 @@
+name: Staging E2E
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * 1-5"
+
+jobs:
+  staging-e2e:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 20
+    env:
+      STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+      STAGING_TEST_EMAIL: ${{ secrets.STAGING_TEST_EMAIL }}
+      STAGING_TEST_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
+      STAGING_PRODUCT_SLUG: ${{ vars.STAGING_PRODUCT_SLUG }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Require staging target
+        run: test -n "$STAGING_BASE_URL"
+      - name: Run staging E2E
+        run: npm run test:e2e:staging
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore

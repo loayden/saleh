@@ -1,0 +1,16 @@
+alter table public.tailoring_requests add column if not exists customer_name text;
+alter table public.tailoring_requests add column if not exists phone text;
+alter table public.tailoring_requests add column if not exists whatsapp text;
+alter table public.tailoring_requests add column if not exists city text check (city in ('القاهرة', 'الإسكندرية'));
+alter table public.tailoring_requests add column if not exists district text;
+alter table public.tailoring_requests add column if not exists address_line text;
+alter table public.tailoring_requests add column if not exists height_cm integer check (height_cm between 80 and 250);
+alter table public.tailoring_requests add column if not exists fabric_color text;
+alter table public.tailoring_requests add column if not exists requested_meters numeric(12,2) check (requested_meters > 0);
+alter table public.tailoring_requests add column if not exists garment_type text;
+alter table public.tailoring_requests add column if not exists reference_images jsonb not null default '[]'::jsonb;
+alter table public.tailoring_requests add column if not exists internal_notes text;
+alter table public.tailoring_requests add column if not exists tailoring_price_egp numeric(12,2) check (tailoring_price_egp >= 0);
+alter table public.tailoring_requests add column if not exists updated_at timestamptz not null default now();
+create index if not exists tailoring_requests_status_created_idx on public.tailoring_requests(status, created_at desc);
+create index if not exists tailoring_requests_user_created_idx on public.tailoring_requests(user_id, created_at desc);

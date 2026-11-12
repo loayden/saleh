@@ -1,0 +1,12 @@
+import Link from "next/link";
+
+const articles = [
+  { slug: "fabric-differences", title: "الفرق بين الساتان والشيفون والكريب", intro: "اعرفي الفرق في اللمعة والانسدال والوزن قبل ما تختاري.", time: "4 دقائق", body: "الساتان أكثر لمعاناً وانسياباً، الشيفون أخف وشفافيته أعلى، والكريب غالباً أكثر هدوءاً وثباتاً. قارني دائماً وصف المنتج وعينة القماش قبل الاعتماد على الاسم فقط." },
+  { slug: "engagement-dress", title: "أفضل قماش لفستان الخطوبة", intro: "دليل بسيط يساعدك تربطي بين شكل الفستان وإحساس القماش.", time: "5 دقائق", body: "ابدئي من شكل القطعة ودرجة الحركة المطلوبة ثم قارني وزن القماش وانسداله. القرار النهائي يعتمد على التصميم والمقاس ورأي الخيّاطة، وليس على المناسبة وحدها." },
+  { slug: "meters-guide", title: "إزاي تحسبي كمية القماش؟", intro: "العوامل اللي بتغيّر عدد الأمتار، وليه الخيّاطة لازم تأكد الحسبة.", time: "3 دقائق", body: "الطول، الاتساع، الأكمام، اتجاه النقشة، والعرض كلها تغيّر الكمية. استخدمي تقديراً مبدئياً في صفحة المنتج، ثم أكدي العدد مع الخيّاطة قبل الشراء النهائي." },
+  { slug: "abaya-fabrics", title: "اختيار قماش العباية", intro: "مقارنة بين الخامات الهادية، الثابتة، والخفيفة للحركة.", time: "4 دقائق", body: "للاستخدام اليومي اختاري خامة متوازنة في الوزن وسهلة الحركة. للقطعة الرسمية قد يناسبك ملمس أكثر ثباتاً أو لمعاناً، حسب التصميم ودرجة التهوية المطلوبة." },
+];
+
+export default function GuidePage() {
+  return <main dir="rtl" className="guide-page"><header className="guide-header"><Link href="/">← العودة إلى صَالِح</Link><p className="eyebrow">دليل صَالِح</p><h1>اختاري بثقة،<br /><em>من أول ملمس.</em></h1><p>معلومات بسيطة وواضحة تساعدك تفهمي القماش قبل ما تشتريه.</p></header><section className="guide-content"><div className="guide-intro"><p className="eyebrow">المعرفة تخلّي الاختيار أسهل</p><h2>دليلك للأقمشة</h2><p>محتوى تعليمي تمهيدي. المواصفات النهائية تعتمد على بيانات المنتج الموثقة من التاجر.</p></div><div className="article-grid">{articles.map((article) => <article key={article.slug}><span>دليل / {article.time}</span><h3>{article.title}</h3><p>{article.intro}</p><Link href={`#${article.slug}`}>اقرئي المقال ←</Link></article>)}</div><div className="guide-article-details">{articles.map((article) => <article id={article.slug} key={article.slug}><p className="eyebrow">{article.time} قراءة</p><h2>{article.title}</h2><p>{article.body}</p></article>)}</div><div className="guide-disclaimer">المقالات التعليمية لا تستبدل رأي الخيّاطة، ولا تُثبت مواصفات منتج بعينه قبل مراجعة صفحة المنتج.</div></section></main>;
+}

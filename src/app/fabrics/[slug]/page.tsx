@@ -1,0 +1,26 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { addLocalCartItem, type CartProductInput } from "@/lib/cart";
+
+type LiveFabric = { id: string; slug: string; name: string; type: string; price: number; stock: number; width: number | null; image: string | null; colors: string[]; note: string | null; feel: string | null; verified: boolean };
+
+export default function FabricProductPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const [fabric, setFabric] = useState<LiveFabric | null>(null), [loading, setLoading] = useState(true), [meters, setMeters] = useState(1), [color, setColor] = useState(""), [nextStep, setNextStep] = useState(false), [message, setMessage] = useState("");
+  useEffect(() => { fetch("/api/fabrics?available=false").then((response) => response.ok ? response.json() : Promise.reject(new Error("catalog"))).then((payload: { data?: LiveFabric[] }) => { const found = (payload.data || []).find((item) => item.slug === slug); setFabric(found || null); setColor(found?.colors?.[0] || ""); setLoading(false); }).catch(() => { setFabric(null); setLoading(false); }); }, [slug]);
+  if (loading) return <main dir="rtl" className="route-state"><span className="route-spinner" /><p>بنحمّل تفاصيل المنتج...</p></main>;
+  if (!fabric) return <main dir="rtl" className="route-state"><h1>المنتج غير متاح</h1><p>هذا المنتج غير موجود في الكتالوج الحالي أو لم يعد متاحاً.</p><Link className="primary" href="/shop">العودة للمتجر ←</Link></main>;
+  const total = meters * fabric.price;
+  const addToCart = async () => {
+    const input: CartProductInput = { ...fabric, meters, color };
+    const response = await fetch("/api/cart", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ productId: fabric.id, meters, color }) });
+    if (response.status === 401) { addLocalCartItem(input); setMessage("تمت إضافة القماش إلى السلة على هذا الجهاز."); return; }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) { setMessage(data.error || "تعذر حفظ القماش في السلة"); return; }
+    setMessage("تمت إضافة القماش إلى سلتك.");
+  };
+  return <main dir="rtl" className="product-page"><nav className="simple-nav"><Link href="/">صَالِح</Link><Link href="/categories">← العودة للأقمشة</Link></nav><section className="product-detail"><div className="product-detail-image">{fabric.image ? <img src={fabric.image} alt={fabric.name} /> : <div className="product-detail-placeholder"><span>{fabric.type}</span><small>صورة المنتج قيد الرفع من التاجر</small></div>}</div><div className="product-detail-copy"><p className="eyebrow">{fabric.type} {fabric.verified ? " / موثق" : " / متاح"}</p><h1>{fabric.name}</h1><p className="product-lead">{fabric.note || "تفاصيل القماش يضيفها التاجر عند توثيق المنتج."}{fabric.feel ? ` مناسب للتصميمات اللي محتاجة ${fabric.feel}.` : ""}</p><div className="product-facts"><span><b>{fabric.width ? `${fabric.width} سم` : "—"}</b> العرض</span><span><b>{fabric.stock} متر</b> المتاح</span><span><b>{fabric.price.toLocaleString("ar-EG")} ج.م</b> سعر المتر</span></div><label className="choice-label">اختاري اللون{fabric.colors.length ? <select value={color} onChange={(e) => setColor(e.target.value)}>{fabric.colors.map((item) => <option key={item}>{item}</option>)}</select> : <input value={color} onChange={(e) => setColor(e.target.value)} placeholder="اكتبي اللون المطلوب" />}</label><label className="choice-label">عدد الأمتار<div className="meter-control"><button type="button" aria-label="تقليل الأمتار" onClick={() => setMeters(Math.max(0.5, meters - 0.5))}>−</button><strong>{meters} متر</strong><button type="button" aria-label="زيادة الأمتار" onClick={() => setMeters(Math.min(fabric.stock, meters + 0.5))}>+</button></div></label><div className="product-total"><span>الإجمالي التقديري</span><strong>{total.toLocaleString("ar-EG")} ج.م</strong></div><button className="primary full-button" onClick={() => setNextStep(true)}>اختاري هتعملي إيه بالقماش ←</button>{message && <p className="form-success-inline">{message} <Link href="/cart">راجعي السلة ←</Link></p>}<p className="product-disclaimer">السعر تقديري حسب عدد الأمتار. الكمية النهائية للتصميم تتأكد مع الخيّاطة.</p></div></section>{nextStep && <div className="overlay" onClick={() => setNextStep(false)}><div className="intent-modal" onClick={(event) => event.stopPropagation()}><button className="close" onClick={() => setNextStep(false)}>×</button><p className="eyebrow">خطوة واحدة قبل السلة</p><h2>هتعملي إيه بالقماش؟</h2><p>اختاري المسار المناسب عشان نجهزلك الخطوة التالية.</p><Link className="intent-choice" href={`/checkout?fabric=${fabric.slug}&meters=${meters}&color=${encodeURIComponent(color)}&mode=fabric`}><strong>أشتري القماش فقط</strong><span>أكملي للبيانات والدفع عند الاستلام ←</span></Link><button type="button" className="intent-choice" onClick={() => void addToCart()}><strong>أضيفي القماش للسلة</strong><span>احتفظي به مع اختيارات أخرى ←</span></button><Link className="intent-choice highlighted" href={`/tailoring/${fabric.slug}?meters=${meters}&color=${encodeURIComponent(color)}`}><strong>أعمل فستان أو قطعة</strong><span>ابعتي تفاصيل التصميم والصورة للإدارة ←</span></Link></div></div>}</main>;
+}
