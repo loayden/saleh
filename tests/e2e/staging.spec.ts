@@ -11,6 +11,7 @@ const publicRoutes = [
   "/assistant",
   "/auth",
   "/auth/signup",
+  "/auth/confirm",
   "/auth/forgot-password",
   "/auth/reset-password",
   "/favorites",
