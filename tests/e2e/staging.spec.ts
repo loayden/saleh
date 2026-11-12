@@ -62,6 +62,19 @@ test("mobile navigation works without horizontal overflow", async ({ page }) => 
   expect(browserErrors).toEqual([]);
 });
 
+test("mobile auth controls avoid zoom and horizontal overflow", async ({ page }) => {
+  const browserErrors: string[] = [];
+  page.on("pageerror", (error) => browserErrors.push(error.message));
+  page.on("console", (message) => { if (message.type() === "error") browserErrors.push(message.text()); });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/auth");
+  await page.waitForLoadState("networkidle");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  expect(await page.getByLabel("البريد الإلكتروني").evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16);
+  expect(await page.getByLabel("كلمة المرور").evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16);
+  expect(browserErrors).toEqual([]);
+});
+
 test("catalog does not expose fake product data", async ({ page }) => {
   await page.goto("/shop");
   const body = await page.locator("body").innerText();
