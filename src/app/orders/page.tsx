@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { Clock3 } from "lucide-react";
 import AuthRequiredState from "@/components/auth-required-state";
 
 export default async function OrdersPage() {
+  await connection();
   const supabase = await createSupabaseServerClient(), { data: { user } } = await supabase.auth.getUser();
   if (!user) return <AuthRequiredState next="/orders" />;
   const { data: orders } = await supabase.from("orders").select("id,status,subtotal_egp,created_at").order("created_at", { ascending: false });

@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import AddressBook from "@/components/address-book";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import AuthRequiredState from "@/components/auth-required-state";
 
 export default async function AddressesPage() {
+  await connection();
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return <AuthRequiredState next="/addresses" />;

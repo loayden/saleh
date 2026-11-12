@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { ShieldCheck } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import AuthRequiredState from "@/components/auth-required-state";
@@ -6,6 +7,7 @@ import MerchantProductForm from "@/components/merchant-product-form";
 import AdminProductManager from "@/components/admin-product-manager";
 
 export default async function AdminProductsPage() {
+  await connection();
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return <AuthRequiredState next="/admin/products" />;

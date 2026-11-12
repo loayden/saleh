@@ -26,4 +26,11 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ["/account/:path*", "/orders/:path*", "/addresses/:path*", "/merchant/:path*", "/admin/:path*", "/api/orders"] };
+export const config = { matcher: [
+  { source: "/account/:path*", missing: [{ type: "header", key: "next-router-prefetch" }, { type: "header", key: "purpose", value: "prefetch" }] },
+  { source: "/orders/:path*", missing: [{ type: "header", key: "next-router-prefetch" }, { type: "header", key: "purpose", value: "prefetch" }] },
+  { source: "/addresses/:path*", missing: [{ type: "header", key: "next-router-prefetch" }, { type: "header", key: "purpose", value: "prefetch" }] },
+  { source: "/merchant/:path*", missing: [{ type: "header", key: "next-router-prefetch" }, { type: "header", key: "purpose", value: "prefetch" }] },
+  { source: "/admin/:path*", missing: [{ type: "header", key: "next-router-prefetch" }, { type: "header", key: "purpose", value: "prefetch" }] },
+  { source: "/api/orders", missing: [{ type: "header", key: "next-router-prefetch" }, { type: "header", key: "purpose", value: "prefetch" }] },
+] };

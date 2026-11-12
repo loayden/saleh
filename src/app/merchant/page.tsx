@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Boxes, ExternalLink, ShieldCheck } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import AuthRequiredState from "@/components/auth-required-state";
@@ -9,6 +10,7 @@ type InventoryRow = { meters: number | string | null }[];
 type ProductRow = { id: string; name_ar: string; slug: string; fabric_type: string; price_egp: number | string; active: boolean; verified: boolean; inventory: InventoryRow };
 
 export default async function MerchantPage() {
+  await connection();
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return <AuthRequiredState next="/merchant" />;

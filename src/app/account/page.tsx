@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { ArrowLeft, CheckCircle2, Clock3, Heart, MapPin, ShieldCheck } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import AuthRequiredState from "@/components/auth-required-state";
 import ProfileSettings from "@/components/profile-settings";
 
 export default async function AccountPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
+  await connection();
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return <AuthRequiredState next="/account" />;
