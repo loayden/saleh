@@ -8,11 +8,12 @@ export async function GET(request: NextRequest) {
   const availableOnly = request.nextUrl.searchParams.get("available") !== "false";
   try {
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("fabric_products").select("id,slug,name_ar,fabric_type,price_egp,width_cm,verified,active,image_url,colors,note,feel,inventory(meters)").eq("active", true).eq("verified", true).order("created_at", { ascending: false }).limit(100);
+    const { data, error } = await supabase.from("fabric_products").select("id,slug,name_ar,fabric_type,price_egp,width_cm,verified,active,image_url,colors,note,feel,is_new_arrival,is_best_seller,offer_price_egp,offer_ends_at,material,weight_gsm,care_instructions,delivery_note,created_at,inventory(meters)").eq("active", true).eq("verified", true).order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
     const results = (data || []).map((fabric) => {
       const inventory = Array.isArray(fabric.inventory) ? fabric.inventory[0] : fabric.inventory;
-      return { id: fabric.id, slug: fabric.slug, name: fabric.name_ar, type: fabric.fabric_type, price: Number(fabric.price_egp), stock: Number(inventory?.meters || 0), width: fabric.width_cm, image: fabric.image_url || null, colors: Array.isArray(fabric.colors) ? fabric.colors : [], note: fabric.note || null, feel: fabric.feel || null, verified: Boolean(fabric.verified) };
+      const offerActive = fabric.offer_price_egp != null && (!fabric.offer_ends_at || new Date(fabric.offer_ends_at).getTime() > Date.now());
+      return { id: fabric.id, slug: fabric.slug, name: fabric.name_ar, type: fabric.fabric_type, price: Number(fabric.price_egp), salePrice: offerActive ? Number(fabric.offer_price_egp) : null, stock: Number(inventory?.meters || 0), width: fabric.width_cm, image: fabric.image_url || null, colors: Array.isArray(fabric.colors) ? fabric.colors : [], note: fabric.note || null, feel: fabric.feel || null, material: fabric.material || null, weight: fabric.weight_gsm || null, care: fabric.care_instructions || null, deliveryNote: fabric.delivery_note || null, newArrival: Boolean(fabric.is_new_arrival), bestSeller: Boolean(fabric.is_best_seller), verified: Boolean(fabric.verified), createdAt: fabric.created_at };
     }).filter((fabric) => {
       const matchesQuery = !query || `${fabric.name} ${fabric.type}`.toLowerCase().includes(query);
       const matchesType = !type || fabric.type === type;

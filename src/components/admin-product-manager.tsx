@@ -14,6 +14,14 @@ type Product = {
   note: string | null;
   feel: string | null;
   image_url: string | null;
+  is_new_arrival: boolean;
+  is_best_seller: boolean;
+  offer_price_egp: number | string | null;
+  offer_ends_at: string | null;
+  material: string | null;
+  weight_gsm: number | string | null;
+  care_instructions: string | null;
+  delivery_note: string | null;
   active: boolean;
   verified: boolean;
   inventory: { meters: number | string }[] | { meters: number | string } | null;
@@ -47,11 +55,11 @@ export default function AdminProductManager({ initial }: { initial: Product[] })
     if (!editing) return;
     setBusy(`${editing.id}:edit`); setMessage("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/merchant/products", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ productId: editing.id, nameAr: form.get("nameAr"), slug: form.get("slug"), fabricType: form.get("fabricType"), priceEgp: form.get("priceEgp"), meters: form.get("meters"), widthCm: form.get("widthCm"), colors: String(form.get("colors") || "").split(","), note: form.get("note"), feel: form.get("feel"), imageUrl: form.get("imageUrl") }) });
+    const response = await fetch("/api/merchant/products", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ productId: editing.id, nameAr: form.get("nameAr"), slug: form.get("slug"), fabricType: form.get("fabricType"), priceEgp: form.get("priceEgp"), meters: form.get("meters"), widthCm: form.get("widthCm"), colors: String(form.get("colors") || "").split(","), note: form.get("note"), feel: form.get("feel"), imageUrl: form.get("imageUrl"), isNewArrival: form.get("isNewArrival") === "on", isBestSeller: form.get("isBestSeller") === "on", offerPriceEgp: form.get("offerPriceEgp"), offerEndsAt: form.get("offerEndsAt"), material: form.get("material"), weightGsm: form.get("weightGsm"), careInstructions: form.get("careInstructions"), deliveryNote: form.get("deliveryNote") }) });
     const payload = await response.json().catch(() => ({}));
     setBusy("");
     if (!response.ok) return setMessage(payload.error || "تعذر حفظ تعديل المنتج");
-    const updated: Product = { ...editing, name_ar: String(form.get("nameAr") || ""), slug: String(form.get("slug") || ""), fabric_type: String(form.get("fabricType") || ""), price_egp: Number(form.get("priceEgp")), width_cm: form.get("widthCm") ? Number(form.get("widthCm")) : null, colors: String(form.get("colors") || "").split(",").map((value) => value.trim()).filter(Boolean), note: String(form.get("note") || "") || null, feel: String(form.get("feel") || "") || null, image_url: String(form.get("imageUrl") || "") || null, inventory: [{ meters: Number(form.get("meters")) }] };
+    const updated: Product = { ...editing, name_ar: String(form.get("nameAr") || ""), slug: String(form.get("slug") || ""), fabric_type: String(form.get("fabricType") || ""), price_egp: Number(form.get("priceEgp")), width_cm: form.get("widthCm") ? Number(form.get("widthCm")) : null, colors: String(form.get("colors") || "").split(",").map((value) => value.trim()).filter(Boolean), note: String(form.get("note") || "") || null, feel: String(form.get("feel") || "") || null, image_url: String(form.get("imageUrl") || "") || null, is_new_arrival: form.get("isNewArrival") === "on", is_best_seller: form.get("isBestSeller") === "on", offer_price_egp: form.get("offerPriceEgp") ? Number(form.get("offerPriceEgp")) : null, offer_ends_at: String(form.get("offerEndsAt") || "") || null, material: String(form.get("material") || "") || null, weight_gsm: form.get("weightGsm") ? Number(form.get("weightGsm")) : null, care_instructions: String(form.get("careInstructions") || "") || null, delivery_note: String(form.get("deliveryNote") || "") || null, inventory: [{ meters: Number(form.get("meters")) }] };
     setProducts((items) => items.map((item) => item.id === editing.id ? updated : item));
     setEditing(null); setMessage("تم تعديل المنتج وحفظه في قاعدة البيانات");
   };
@@ -82,8 +90,15 @@ export default function AdminProductManager({ initial }: { initial: Product[] })
         <label>العرض بالسنتيمتر<input name="widthCm" type="number" min="1" step="1" defaultValue={editing.width_cm || ""} /></label>
         <label>الألوان مفصولة بفاصلة<input name="colors" defaultValue={editing.colors?.join(", ")} /></label>
         <label>رابط الصورة<input name="imageUrl" type="url" defaultValue={editing.image_url || ""} dir="ltr" /></label>
+        <label>الخامة<input name="material" defaultValue={editing.material || ""} /></label>
+        <label>الوزن GSM<input name="weightGsm" type="number" min="1" defaultValue={editing.weight_gsm || ""} /></label>
+        <label>سعر العرض / متر<input name="offerPriceEgp" type="number" min="0" step="0.01" defaultValue={editing.offer_price_egp || ""} /></label>
+        <label>نهاية العرض<input name="offerEndsAt" type="datetime-local" defaultValue={editing.offer_ends_at ? editing.offer_ends_at.slice(0, 16) : ""} /></label>
       </div>
       <label>الإحساس/الملمس<input name="feel" defaultValue={editing.feel || ""} /></label>
+      <div className="merchant-checkboxes"><label><input name="isNewArrival" type="checkbox" defaultChecked={editing.is_new_arrival} /> وصول جديد</label><label><input name="isBestSeller" type="checkbox" defaultChecked={editing.is_best_seller} /> الأكثر مبيعاً</label></div>
+      <label>تعليمات العناية<input name="careInstructions" defaultValue={editing.care_instructions || ""} /></label>
+      <label>ملاحظة التوصيل<input name="deliveryNote" defaultValue={editing.delivery_note || ""} /></label>
       <label>ملاحظات<input name="note" defaultValue={editing.note || ""} /></label>
       <button className="primary" disabled={busy !== ""} type="submit">{busy === `${editing.id}:edit` ? "جاري الحفظ..." : "حفظ التعديلات"}</button>
     </form>}

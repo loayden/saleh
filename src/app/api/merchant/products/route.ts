@@ -19,7 +19,11 @@ function parseBody(body: Record<string, unknown> | null) {
   const width = body?.widthCm === "" || body?.widthCm == null ? null : Number(body.widthCm);
   const colors = Array.isArray(body?.colors) ? body.colors.filter((color): color is string => typeof color === "string").map((color) => color.trim()).filter(Boolean).slice(0, 20) : [];
   if (!nameAr || !/^[a-z0-9-]{2,100}$/.test(slug) || !fabricType || !Number.isFinite(price) || price < 0 || !Number.isFinite(meters) || meters < 0 || (width !== null && (!Number.isInteger(width) || width <= 0))) return null;
-  return { name_ar: nameAr.slice(0, 160), slug, fabric_type: fabricType.slice(0, 100), price_egp: price, width_cm: width, colors, note: typeof body?.note === "string" ? body.note.trim().slice(0, 1000) : null, feel: typeof body?.feel === "string" ? body.feel.trim().slice(0, 200) : null, image_url: typeof body?.imageUrl === "string" && body.imageUrl.startsWith("https://") ? body.imageUrl.trim().slice(0, 1000) : null, meters };
+  const offerPrice = body?.offerPriceEgp === "" || body?.offerPriceEgp == null ? null : Number(body.offerPriceEgp);
+  const weight = body?.weightGsm === "" || body?.weightGsm == null ? null : Number(body.weightGsm);
+  if (offerPrice !== null && (!Number.isFinite(offerPrice) || offerPrice < 0 || offerPrice > price)) return null;
+  if (weight !== null && (!Number.isFinite(weight) || weight <= 0)) return null;
+  return { name_ar: nameAr.slice(0, 160), slug, fabric_type: fabricType.slice(0, 100), price_egp: price, width_cm: width, colors, note: typeof body?.note === "string" ? body.note.trim().slice(0, 1000) : null, feel: typeof body?.feel === "string" ? body.feel.trim().slice(0, 200) : null, image_url: typeof body?.imageUrl === "string" && body.imageUrl.startsWith("https://") ? body.imageUrl.trim().slice(0, 1000) : null, is_new_arrival: body?.isNewArrival === true, is_best_seller: body?.isBestSeller === true, offer_price_egp: offerPrice, offer_ends_at: typeof body?.offerEndsAt === "string" && body.offerEndsAt ? body.offerEndsAt : null, material: typeof body?.material === "string" ? body.material.trim().slice(0, 160) : null, weight_gsm: weight, care_instructions: typeof body?.careInstructions === "string" ? body.careInstructions.trim().slice(0, 500) : null, delivery_note: typeof body?.deliveryNote === "string" ? body.deliveryNote.trim().slice(0, 500) : null, meters };
 }
 
 export async function POST(request: Request) {
@@ -28,7 +32,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const product = parseBody(body);
   if (!product) return NextResponse.json({ error: "بيانات المنتج أو المخزون غير صالحة" }, { status: 400 });
-  const { data, error: insertError } = await supabase.from("fabric_products").insert({ name_ar: product.name_ar, slug: product.slug, fabric_type: product.fabric_type, price_egp: product.price_egp, width_cm: product.width_cm, colors: product.colors, note: product.note, feel: product.feel, image_url: product.image_url, verified: false, active: true }).select("id,slug").single();
+  const { data, error: insertError } = await supabase.from("fabric_products").insert({ name_ar: product.name_ar, slug: product.slug, fabric_type: product.fabric_type, price_egp: product.price_egp, width_cm: product.width_cm, colors: product.colors, note: product.note, feel: product.feel, image_url: product.image_url, is_new_arrival: product.is_new_arrival, is_best_seller: product.is_best_seller, offer_price_egp: product.offer_price_egp, offer_ends_at: product.offer_ends_at, material: product.material, weight_gsm: product.weight_gsm, care_instructions: product.care_instructions, delivery_note: product.delivery_note, verified: false, active: true }).select("id,slug").single();
   if (insertError || !data) return NextResponse.json({ error: insertError?.code === "23505" ? "هذا الرابط المختصر مستخدم بالفعل" : "تعذر إنشاء المنتج" }, { status: 409 });
   const { error: inventoryError } = await supabase.from("inventory").insert({ product_id: data.id, meters: product.meters });
   if (inventoryError) { await supabase.from("fabric_products").delete().eq("id", data.id); return NextResponse.json({ error: "تعذر حفظ المخزون" }, { status: 503 }); }
@@ -45,7 +49,13 @@ export async function PATCH(request: Request) {
   if (action === "stock") {
     const meters = Number(body?.meters);
     if (!Number.isFinite(meters) || meters < 0 || meters > 100000) return NextResponse.json({ error: "المخزون غير صالح" }, { status: 400 });
+    const { data: previous } = await supabase.from("inventory").select("meters").eq("product_id", productId).maybeSingle();
     const { error: stockError } = await supabase.from("inventory").upsert({ product_id: productId, meters }, { onConflict: "product_id" });
+    if (!stockError && meters > 0 && Number(previous?.meters || 0) <= 0) {
+      const { data: waiters } = await supabase.from("waitlist_subscriptions").select("user_id,color").eq("product_id", productId);
+      if (waiters?.length) await supabase.from("notifications").insert(waiters.map((waiter) => ({ user_id: waiter.user_id, title: "القماش رجع متاح", body: `اللون ${waiter.color || "المختار"} بقى متاح في الكتالوج.` })));
+    }
+    if (!stockError) await supabase.from("audit_logs").insert({ actor_id: (await supabase.auth.getUser()).data.user?.id || null, action: "product.stock_updated", entity_type: "fabric_product", entity_id: productId, metadata: { meters } });
     return stockError ? NextResponse.json({ error: "تعذر تحديث المخزون" }, { status: 503 }) : NextResponse.json({ updated: true });
   }
   if (["publish", "unpublish"].includes(action)) {
@@ -59,7 +69,7 @@ export async function PATCH(request: Request) {
   }
   const product = parseBody(body);
   if (!product) return NextResponse.json({ error: "بيانات المنتج غير صالحة" }, { status: 400 });
-  const { error: updateError } = await supabase.from("fabric_products").update({ name_ar: product.name_ar, slug: product.slug, fabric_type: product.fabric_type, price_egp: product.price_egp, width_cm: product.width_cm, colors: product.colors, note: product.note, feel: product.feel, image_url: product.image_url }).eq("id", productId);
+  const { error: updateError } = await supabase.from("fabric_products").update({ name_ar: product.name_ar, slug: product.slug, fabric_type: product.fabric_type, price_egp: product.price_egp, width_cm: product.width_cm, colors: product.colors, note: product.note, feel: product.feel, image_url: product.image_url, is_new_arrival: product.is_new_arrival, is_best_seller: product.is_best_seller, offer_price_egp: product.offer_price_egp, offer_ends_at: product.offer_ends_at, material: product.material, weight_gsm: product.weight_gsm, care_instructions: product.care_instructions, delivery_note: product.delivery_note }).eq("id", productId);
   if (updateError) return NextResponse.json({ error: "تعذر تحديث المنتج" }, { status: 503 });
   const { error: stockError } = await supabase.from("inventory").upsert({ product_id: productId, meters: product.meters }, { onConflict: "product_id" });
   if (stockError) return NextResponse.json({ error: "تم تحديث المنتج لكن تعذر تحديث المخزون" }, { status: 503 });

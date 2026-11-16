@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
+export async function GET() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "تسجيل الدخول مطلوب" }, { status: 401 });
+  const { data, error } = await supabase.from("tailoring_requests").select("id,status,customer_name,phone,city,district,address_line,height_cm,fabric_color,requested_meters,garment_type,details,reference_images,tailoring_price_egp,created_at,updated_at,tailors(name_ar)").eq("user_id", user.id).order("created_at", { ascending: false });
+  if (error) return NextResponse.json({ error: "تعذر تحميل طلبات التفصيل" }, { status: 503 });
+  return NextResponse.json({ data: data || [] });
+}
+
 export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
