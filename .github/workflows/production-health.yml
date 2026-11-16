@@ -1,0 +1,20 @@
+name: Production Health Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL || 'https://saleh-fabrics.vercel.app' }}
+    steps:
+      - name: Check application health and database readiness
+        run: |
+          set -eu
+          response=$(curl --fail --silent --show-error --max-time 20 "$PRODUCTION_BASE_URL/api/health")
+          echo "$response"
+          echo "$response" | jq -e '.status == "ok" and .checks.database == true'

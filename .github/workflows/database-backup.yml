@@ -1,0 +1,35 @@
+name: Supabase Database Backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 2 * * 0"
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_DIR: backups
+      BACKUP_PRUNE: "true"
+      BACKUP_RETENTION_DAYS: "14"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Require database secret
+        run: test -n "$SUPABASE_DB_URL"
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --yes postgresql-client
+      - name: Create and verify backup
+        run: npm run backup:database
+      - name: Upload database backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: saleh-database-backup-${{ github.run_id }}
+          path: backups/
+          retention-days: 14
+          if-no-files-found: error

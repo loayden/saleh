@@ -60,6 +60,11 @@
 - [x] Full completion matrix documenting every phase and every remaining external dependency
 - [x] Application verification checklist with route, API, database, mobile, and dependency statuses
 - [x] Phase 10 configurable quantity estimate rules UI with tailor confirmation disclaimer
+- [x] Customer measurement profiles, tailoring request history, and customer notifications
+- [x] Dedicated order detail/tracking timeline with real status events and staff notifications
+- [x] Live catalog discovery filters, merchant-managed offers, product metadata, favorites, waitlist, and sample requests
+- [x] Purchase-verified reviews and RLS-protected customer/admin support messaging
+- [x] Scheduled production health and Supabase database backup workflows without repository secrets
 - [ ] Verified merchant product onboarding, provider sandbox E2E, and production QA phases
 
 The remaining unchecked items require verified merchant/tailor onboarding, provisioned role accounts, external provider secrets, public webhooks, monitoring/backups, or deployment work. The current Supabase database has no verified active products or tailors, so the storefront and discovery pages intentionally render honest empty states until real records are added.

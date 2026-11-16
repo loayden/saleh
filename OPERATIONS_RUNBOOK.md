@@ -90,6 +90,8 @@ Optional CI secrets/variables:
 
 The GitHub Actions workflow is manual/scheduled and stores the Playwright report as an artifact. It does not create users, products, orders, or payment transactions, so the staging project must provide disposable records and a cleanup policy.
 
+The repository also includes scheduled GitHub Actions for `GET /api/health` and portable Supabase dumps. Configure the `SUPABASE_DB_URL` Actions secret for the backup workflow and optionally the `PRODUCTION_BASE_URL` repository variable. GitHub artifact retention is 14 days; keep managed Supabase backups/PITR enabled as the primary recovery mechanism.
+
 ## Launch gate
 
 Do not mark production ready until `/api/health` is green, a backup restore drill passes, the scheduled E2E job is green, and Paymob/delivery/OpenAI monitoring has an owner and alert route.
