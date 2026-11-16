@@ -9,6 +9,7 @@
 @import "./reviews.css";
 @import "./messages.css";
 @import "./admin-reviews.css";
+@import "./coupons.css";
 
 /* Compact navigation icons: visual size is small while the button hit area stays accessible. */
 .home-v2-tools svg,.home-v2-mobile-menu svg{width:17px;height:17px;stroke-width:1.7}.home-v2-menu-button svg{width:19px;height:19px;stroke-width:1.7}.mobile-global-nav svg,.mobile-bottom-nav svg{width:16px;height:16px;stroke-width:1.7}
