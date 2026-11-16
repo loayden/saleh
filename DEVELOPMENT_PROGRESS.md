@@ -65,6 +65,7 @@
 - [x] Live catalog discovery filters, merchant-managed offers, product metadata, favorites, waitlist, and sample requests
 - [x] Purchase-verified reviews and RLS-protected customer/admin support messaging
 - [x] Scheduled production health and Supabase database backup workflows without repository secrets
+- [x] Transaction-safe coupon validation, checkout discount persistence, and admin coupon controls
 - [ ] Verified merchant product onboarding, provider sandbox E2E, and production QA phases
 
 The remaining unchecked items require verified merchant/tailor onboarding, provisioned role accounts, external provider secrets, public webhooks, monitoring/backups, or deployment work. The current Supabase database has no verified active products or tailors, so the storefront and discovery pages intentionally render honest empty states until real records are added.
